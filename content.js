@@ -1,12 +1,11 @@
 // Content script that runs on ChatGPT pages
-// Captures conversations and sends them to the background worker for storage
+// Captures conversations, sidebar items, and project folders
 
 (function () {
   "use strict";
 
   const SAVE_INTERVAL = 5000;
   let lastSavedContent = "";
-  let sidebarScraped = false;
 
   // Safe wrapper for chrome.runtime.sendMessage
   function safeSendMessage(message, callback) {
@@ -34,14 +33,12 @@
   }
 
   function getConversationTitle() {
-    // Try to get title from the active nav item
     const activeNav = document.querySelector('nav a[class*="bg-"]');
     if (activeNav) {
       const titleEl = activeNav.querySelector("div") || activeNav;
       const text = titleEl.textContent.trim();
       if (text) return text;
     }
-    // Fallback: page title
     const title = document.title.replace(" | ChatGPT", "").replace("ChatGPT", "").trim();
     return title || "Untitled Chat";
   }
@@ -127,30 +124,100 @@
     }
   }
 
+  // Scrape project folders from the sidebar
+  function scrapeProjects() {
+    var projects = [];
+
+    var navElements = document.querySelectorAll("nav");
+
+    navElements.forEach(function (nav) {
+      // Look for links that go to projects/GPTs
+      var projectLinks = nav.querySelectorAll('a[href^="/g/"], a[href^="/gpts/"], a[href^="/project/"]');
+      projectLinks.forEach(function (link) {
+        var href = link.getAttribute("href");
+        var titleEl = link.querySelector("div, span") || link;
+        var title = titleEl.textContent.trim();
+        if (!title) return;
+
+        projects.push({
+          id: href,
+          title: title,
+          url: "https://chatgpt.com" + href,
+          type: "gpt",
+        });
+      });
+
+      // Look for folder/project groupings in the sidebar
+      var allElements = nav.querySelectorAll('[class*="project"], [class*="folder"], [data-testid*="project"], [data-testid*="folder"]');
+      allElements.forEach(function (el) {
+        var link = el.closest("a") || el.querySelector("a");
+        if (!link) return;
+        var href = link.getAttribute("href") || "";
+        var titleEl = el.querySelector("div, span") || el;
+        var title = titleEl.textContent.trim();
+        if (!title || title.length > 100) return;
+
+        var existing = projects.find(function (p) { return p.id === href; });
+        if (!existing) {
+          projects.push({
+            id: href || "project-" + title.replace(/\s+/g, "-").toLowerCase(),
+            title: title,
+            url: href ? "https://chatgpt.com" + href : "",
+            type: "project",
+          });
+        }
+      });
+
+      // Look for sidebar group headings that might indicate project folders
+      var headings = nav.querySelectorAll("h3, [role='heading'], [class*='group-title']");
+      headings.forEach(function (heading) {
+        var text = heading.textContent.trim();
+        if (!text || text === "Today" || text === "Yesterday" || text === "Previous 7 Days" ||
+            text === "Previous 30 Days" || text === "Older" || text.length > 80) return;
+
+        var existing = projects.find(function (p) { return p.title === text; });
+        if (!existing) {
+          projects.push({
+            id: "folder-" + text.replace(/\s+/g, "-").toLowerCase(),
+            title: text,
+            url: "",
+            type: "folder",
+          });
+        }
+      });
+    });
+
+    if (projects.length > 0) {
+      safeSendMessage(
+        { type: "SAVE_PROJECTS", projects: projects },
+        function (response) {
+          console.debug("[GPT Tracker] Saved " + projects.length + " projects/folders");
+        }
+      );
+    }
+  }
+
   // Watch for sidebar to load / update
   function waitForSidebar() {
     var check = function () {
       var sidebarLinks = document.querySelectorAll('nav a[href^="/c/"]');
       if (sidebarLinks.length > 0) {
         scrapeSidebar();
-        sidebarScraped = true;
+        scrapeProjects();
       }
     };
 
-    // Try immediately
     check();
 
-    // Also observe DOM for sidebar rendering
     var observer = new MutationObserver(function () {
       check();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Stop observing after 30 seconds to save resources
     setTimeout(function () { observer.disconnect(); }, 30000);
 
-    // Re-scrape sidebar every 30 seconds
     setInterval(scrapeSidebar, 30000);
+    setInterval(scrapeProjects, 30000);
   }
 
   // Monitor for URL changes (SPA navigation)
@@ -161,18 +228,14 @@
       lastSavedContent = "";
       setTimeout(saveConversation, 2000);
       setTimeout(scrapeSidebar, 3000);
+      setTimeout(scrapeProjects, 3000);
     }
   });
 
   urlObserver.observe(document.body, { childList: true, subtree: true });
 
-  // Periodic save of current conversation
   setInterval(saveConversation, SAVE_INTERVAL);
-
-  // Initial save after page loads
   setTimeout(saveConversation, 3000);
-
-  // Start sidebar scraping
   waitForSidebar();
 
   console.debug("[GPT Tracker] Content script loaded");

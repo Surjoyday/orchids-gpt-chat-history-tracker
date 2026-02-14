@@ -1,14 +1,19 @@
 // Background service worker
-// Handles saving/retrieving conversations from chrome.storage.local
+// Handles saving/retrieving conversations and projects from chrome.storage.local
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "SAVE_CONVERSATION") {
     saveConversation(message.conversation).then(sendResponse);
-    return true; // async
+    return true;
   }
 
   if (message.type === "GET_ALL_CONVERSATIONS") {
     getAllConversations().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "GET_RECENT_CONVERSATIONS") {
+    getRecentConversations(message.limit || 5).then(sendResponse);
     return true;
   }
 
@@ -31,6 +36,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     saveSidebarConversations(message.conversations).then(sendResponse);
     return true;
   }
+
+  if (message.type === "SAVE_PROJECTS") {
+    saveProjects(message.projects).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "GET_PROJECTS") {
+    getProjects().then(sendResponse);
+    return true;
+  }
 });
 
 async function saveConversation(conversation) {
@@ -47,7 +62,6 @@ async function saveConversation(conversation) {
 
     await chrome.storage.local.set({ [key]: conversation });
 
-    // Update the index
     const indexResult = await chrome.storage.local.get("chat_index");
     const index = indexResult.chat_index || [];
     const existingIdx = index.findIndex((item) => item.id === conversation.id);
@@ -79,9 +93,19 @@ async function getAllConversations() {
   try {
     const result = await chrome.storage.local.get("chat_index");
     const index = result.chat_index || [];
-    // Sort by last updated
     index.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
     return { success: true, conversations: index };
+  } catch (err) {
+    return { success: false, conversations: [], error: err.message };
+  }
+}
+
+async function getRecentConversations(limit) {
+  try {
+    const result = await chrome.storage.local.get("chat_index");
+    const index = result.chat_index || [];
+    index.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+    return { success: true, conversations: index.slice(0, limit) };
   } catch (err) {
     return { success: false, conversations: [], error: err.message };
   }
@@ -95,7 +119,7 @@ async function saveSidebarConversations(conversations) {
     let added = 0;
 
     for (const conv of conversations) {
-      if (existingIds.has(conv.id)) continue; // Don't overwrite already-tracked chats
+      if (existingIds.has(conv.id)) continue;
 
       const key = `chat_${conv.id}`;
       conv.firstSaved = new Date().toISOString();
@@ -122,6 +146,39 @@ async function saveSidebarConversations(conversations) {
   } catch (err) {
     console.error("[GPT Tracker] Sidebar save error:", err);
     return { success: false, error: err.message };
+  }
+}
+
+async function saveProjects(projects) {
+  try {
+    const result = await chrome.storage.local.get("project_index");
+    const existing = result.project_index || [];
+    const existingIds = new Set(existing.map((p) => p.id));
+
+    for (const proj of projects) {
+      const idx = existing.findIndex((p) => p.id === proj.id);
+      if (idx >= 0) {
+        existing[idx] = { ...existing[idx], ...proj, lastSeen: new Date().toISOString() };
+      } else {
+        existing.push({ ...proj, firstSaved: new Date().toISOString(), lastSeen: new Date().toISOString() });
+      }
+    }
+
+    await chrome.storage.local.set({ project_index: existing });
+    return { success: true };
+  } catch (err) {
+    console.error("[GPT Tracker] Project save error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+async function getProjects() {
+  try {
+    const result = await chrome.storage.local.get("project_index");
+    const projects = result.project_index || [];
+    return { success: true, projects };
+  } catch (err) {
+    return { success: false, projects: [], error: err.message };
   }
 }
 

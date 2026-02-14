@@ -5,7 +5,7 @@
 }
 
 body {
-  width: 400px;
+  width: 420px;
   min-height: 500px;
   max-height: 600px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -19,7 +19,7 @@ body {
 }
 
 header {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 header h1 {
@@ -33,6 +33,159 @@ header h1 {
   font-size: 12px;
   color: #888;
   margin-top: 2px;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 12px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.divider {
+  height: 1px;
+  background: #222;
+  margin: 14px 0;
+}
+
+/* Recent Chats */
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.recent-item:hover {
+  background: #222;
+  border-color: #10a37f;
+}
+
+.recent-icon {
+  color: #10a37f;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.recent-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-meta {
+  font-size: 11px;
+  color: #666;
+}
+
+.recent-arrow {
+  color: #555;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.recent-item:hover .recent-arrow {
+  color: #10a37f;
+}
+
+/* Projects */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-item:hover {
+  background: #222;
+  border-color: #6366f1;
+}
+
+.project-icon {
+  color: #6366f1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.project-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-type {
+  font-size: 11px;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.project-item:hover .recent-arrow {
+  color: #6366f1;
 }
 
 /* Search */
@@ -64,7 +217,6 @@ header h1 {
 .actions {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
 }
 
 .btn {
@@ -120,10 +272,16 @@ header h1 {
   padding: 0 4px;
   line-height: 1;
   transition: color 0.15s;
+  display: flex;
+  align-items: center;
 }
 
 .btn-icon:hover {
   color: #ef4444;
+}
+
+.btn-icon.open-btn:hover {
+  color: #10a37f;
 }
 
 /* Conversation List */
@@ -165,6 +323,13 @@ header h1 {
   flex: 1;
 }
 
+.conv-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .conv-meta {
   display: flex;
   justify-content: space-between;
@@ -197,6 +362,13 @@ header h1 {
 
 .empty-state a:hover {
   text-decoration: underline;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  padding: 12px;
 }
 
 /* Detail View */
