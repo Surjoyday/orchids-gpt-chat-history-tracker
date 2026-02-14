@@ -26,6 +26,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.clear().then(() => sendResponse({ success: true }));
     return true;
   }
+
+  if (message.type === "SAVE_SIDEBAR_CONVERSATIONS") {
+    saveSidebarConversations(message.conversations).then(sendResponse);
+    return true;
+  }
 });
 
 async function saveConversation(conversation) {
@@ -79,6 +84,44 @@ async function getAllConversations() {
     return { success: true, conversations: index };
   } catch (err) {
     return { success: false, conversations: [], error: err.message };
+  }
+}
+
+async function saveSidebarConversations(conversations) {
+  try {
+    const indexResult = await chrome.storage.local.get("chat_index");
+    const index = indexResult.chat_index || [];
+    const existingIds = new Set(index.map((item) => item.id));
+    let added = 0;
+
+    for (const conv of conversations) {
+      if (existingIds.has(conv.id)) continue; // Don't overwrite already-tracked chats
+
+      const key = `chat_${conv.id}`;
+      conv.firstSaved = new Date().toISOString();
+      await chrome.storage.local.set({ [key]: conv });
+
+      index.unshift({
+        id: conv.id,
+        title: conv.title,
+        messageCount: conv.messageCount || 0,
+        lastUpdated: conv.lastUpdated,
+        firstSaved: conv.firstSaved,
+        url: conv.url,
+      });
+
+      existingIds.add(conv.id);
+      added++;
+    }
+
+    if (added > 0) {
+      await chrome.storage.local.set({ chat_index: index });
+    }
+
+    return { success: true, added };
+  } catch (err) {
+    console.error("[GPT Tracker] Sidebar save error:", err);
+    return { success: false, error: err.message };
   }
 }
 
