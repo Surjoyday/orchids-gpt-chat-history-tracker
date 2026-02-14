@@ -1,0 +1,7 @@
+{
+  "projectId": "b675095c-304c-4b13-946a-247e7e37f2db",
+  "createdAt": 1771100219467,
+  "version": "1.0",
+  "startupCommands": ["node server.js"],
+  "templateId": "any"
+}

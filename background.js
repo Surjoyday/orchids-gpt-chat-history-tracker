@@ -1,0 +1,98 @@
+// Background service worker
+// Handles saving/retrieving conversations from chrome.storage.local
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "SAVE_CONVERSATION") {
+    saveConversation(message.conversation).then(sendResponse);
+    return true; // async
+  }
+
+  if (message.type === "GET_ALL_CONVERSATIONS") {
+    getAllConversations().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "DELETE_CONVERSATION") {
+    deleteConversation(message.id).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "EXPORT_ALL") {
+    getAllConversations().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "CLEAR_ALL") {
+    chrome.storage.local.clear().then(() => sendResponse({ success: true }));
+    return true;
+  }
+});
+
+async function saveConversation(conversation) {
+  try {
+    const key = `chat_${conversation.id}`;
+    const result = await chrome.storage.local.get(key);
+    const existing = result[key];
+
+    if (existing) {
+      conversation.firstSaved = existing.firstSaved;
+    } else {
+      conversation.firstSaved = new Date().toISOString();
+    }
+
+    await chrome.storage.local.set({ [key]: conversation });
+
+    // Update the index
+    const indexResult = await chrome.storage.local.get("chat_index");
+    const index = indexResult.chat_index || [];
+    const existingIdx = index.findIndex((item) => item.id === conversation.id);
+
+    const indexEntry = {
+      id: conversation.id,
+      title: conversation.title,
+      messageCount: conversation.messageCount,
+      lastUpdated: conversation.lastUpdated,
+      firstSaved: conversation.firstSaved,
+      url: conversation.url,
+    };
+
+    if (existingIdx >= 0) {
+      index[existingIdx] = indexEntry;
+    } else {
+      index.unshift(indexEntry);
+    }
+
+    await chrome.storage.local.set({ chat_index: index });
+    return { success: true };
+  } catch (err) {
+    console.error("[GPT Tracker] Save error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+async function getAllConversations() {
+  try {
+    const result = await chrome.storage.local.get("chat_index");
+    const index = result.chat_index || [];
+    // Sort by last updated
+    index.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+    return { success: true, conversations: index };
+  } catch (err) {
+    return { success: false, conversations: [], error: err.message };
+  }
+}
+
+async function deleteConversation(id) {
+  try {
+    const key = `chat_${id}`;
+    await chrome.storage.local.remove(key);
+
+    const indexResult = await chrome.storage.local.get("chat_index");
+    const index = (indexResult.chat_index || []).filter((item) => item.id !== id);
+    await chrome.storage.local.set({ chat_index: index });
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}

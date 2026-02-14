@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT History Tracker - Preview</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      background: #111;
+      padding: 40px 20px;
+      width: auto;
+      max-height: none;
+    }
+    .phone-frame {
+      width: 400px;
+      min-height: 500px;
+      border: 2px solid #333;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0d0d0d;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .preview-banner {
+      background: #10a37f;
+      color: #fff;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="preview-banner">Extension Preview (with mock data)</div>
+    <div class="container">
+      <header>
+        <h1>ChatGPT Tracker</h1>
+        <p class="subtitle" id="stats">5 conversations saved</p>
+      </header>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search conversations..." />
+      </div>
+
+      <div class="actions">
+        <button id="exportBtn" class="btn btn-secondary">Export</button>
+        <button id="clearBtn" class="btn btn-danger">Clear All</button>
+      </div>
+
+      <div id="conversationList" class="conversation-list">
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display:none;">
+        <p>No conversations saved yet.</p>
+        <p class="hint">Visit <a href="https://chatgpt.com" target="_blank">chatgpt.com</a> and start chatting.</p>
+      </div>
+
+      <div id="detailView" class="detail-view" style="display:none;">
+        <button id="backBtn" class="btn btn-back">&larr; Back</button>
+        <h2 id="detailTitle"></h2>
+        <p class="detail-meta" id="detailMeta"></p>
+        <div id="detailMessages" class="messages"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mock data for preview
+    const mockConversations = [
+      {
+        id: "abc-123",
+        title: "Help me write a Python web scraper",
+        messageCount: 12,
+        lastUpdated: new Date(Date.now() - 300000).toISOString(),
+        url: "https://chatgpt.com/c/abc-123",
+        messages: [
+          { role: "user", content: "Can you help me write a Python web scraper using BeautifulSoup?" },
+          { role: "assistant", content: "Sure! Here's a basic web scraper using BeautifulSoup and requests:\n\nimport requests\nfrom bs4 import BeautifulSoup\n\nurl = 'https://example.com'\nresponse = requests.get(url)\nsoup = BeautifulSoup(response.text, 'html.parser')\n\nfor item in soup.find_all('h2'):\n    print(item.text)" },
+          { role: "user", content: "How do I handle pagination?" },
+          { role: "assistant", content: "You can handle pagination by finding the 'next page' link and looping through pages until there are no more pages to scrape." },
+        ]
+      },
+      {
+        id: "def-456",
+        title: "Explain quantum computing basics",
+        messageCount: 8,
+        lastUpdated: new Date(Date.now() - 3600000).toISOString(),
+        url: "https://chatgpt.com/c/def-456",
+        messages: [
+          { role: "user", content: "Can you explain quantum computing in simple terms?" },
+          { role: "assistant", content: "Quantum computing uses quantum bits (qubits) instead of regular bits. While a regular bit is either 0 or 1, a qubit can be both at the same time thanks to superposition." },
+        ]
+      },
+      {
+        id: "ghi-789",
+        title: "React vs Vue comparison",
+        messageCount: 15,
+        lastUpdated: new Date(Date.now() - 86400000).toISOString(),
+        url: "https://chatgpt.com/c/ghi-789",
+        messages: [
+          { role: "user", content: "What are the main differences between React and Vue?" },
+          { role: "assistant", content: "React and Vue are both popular frontend frameworks. React uses JSX and has a larger ecosystem, while Vue uses templates and is often considered easier to learn." },
+        ]
+      },
+      {
+        id: "jkl-012",
+        title: "Debug Node.js memory leak",
+        messageCount: 22,
+        lastUpdated: new Date(Date.now() - 172800000).toISOString(),
+        url: "https://chatgpt.com/c/jkl-012",
+        messages: [
+          { role: "user", content: "My Node.js app keeps running out of memory. How do I debug this?" },
+          { role: "assistant", content: "You can use the --inspect flag and Chrome DevTools to take heap snapshots. Also check for common causes like event listener leaks and unclosed database connections." },
+        ]
+      },
+      {
+        id: "mno-345",
+        title: "Write a business email template",
+        messageCount: 6,
+        lastUpdated: new Date(Date.now() - 604800000).toISOString(),
+        url: "https://chatgpt.com/c/mno-345",
+        messages: [
+          { role: "user", content: "Can you help me write a professional email to a client about a project delay?" },
+          { role: "assistant", content: "Subject: Update on Project Timeline\n\nDear [Client Name],\n\nI hope this message finds you well. I wanted to reach out regarding the current status of [Project Name]..." },
+        ]
+      },
+    ];
+
+    function formatDate(isoString) {
+      const d = new Date(isoString);
+      const now = new Date();
+      const diff = now - d;
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      if (mins < 1) return "Just now";
+      if (mins < 60) return mins + "m ago";
+      if (hours < 24) return hours + "h ago";
+      if (days < 7) return days + "d ago";
+      return d.toLocaleDateString();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    const conversationList = document.getElementById("conversationList");
+    const detailView = document.getElementById("detailView");
+    const searchInput = document.getElementById("searchInput");
+
+    function renderList(convs) {
+      conversationList.innerHTML = "";
+      convs.forEach(conv => {
+        const item = document.createElement("div");
+        item.className = "conversation-item";
+        item.innerHTML = `
+          <div class="conv-header">
+            <span class="conv-title">${escapeHtml(conv.title)}</span>
+            <button class="btn-icon delete-btn">&times;</button>
+          </div>
+          <div class="conv-meta">
+            <span>${conv.messageCount} messages</span>
+            <span>${formatDate(conv.lastUpdated)}</span>
+          </div>
+        `;
+        item.addEventListener("click", (e) => {
+          if (e.target.classList.contains("delete-btn")) return;
+          openDetail(conv);
+        });
+        conversationList.appendChild(item);
+      });
+    }
+
+    function openDetail(conv) {
+      conversationList.style.display = "none";
+      document.querySelector(".search-bar").style.display = "none";
+      document.querySelector(".actions").style.display = "none";
+      document.querySelector("header").style.display = "none";
+      detailView.style.display = "block";
+
+      document.getElementById("detailTitle").textContent = conv.title;
+      document.getElementById("detailMeta").innerHTML = `${conv.messageCount} messages &middot; ${formatDate(conv.lastUpdated)} &middot; <a href="${conv.url}" target="_blank">Open in ChatGPT</a>`;
+
+      const msgs = document.getElementById("detailMessages");
+      msgs.innerHTML = "";
+      conv.messages.forEach(msg => {
+        const el = document.createElement("div");
+        el.className = `message message-${msg.role}`;
+        el.innerHTML = `<div class="message-role">${msg.role === "user" ? "You" : "ChatGPT"}</div><div class="message-content">${escapeHtml(msg.content)}</div>`;
+        msgs.appendChild(el);
+      });
+    }
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      detailView.style.display = "none";
+      conversationList.style.display = "block";
+      document.querySelector(".search-bar").style.display = "block";
+      document.querySelector(".actions").style.display = "flex";
+      document.querySelector("header").style.display = "block";
+    });
+
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.toLowerCase();
+      renderList(q ? mockConversations.filter(c => c.title.toLowerCase().includes(q)) : mockConversations);
+    });
+
+    renderList(mockConversations);
+  </script>
+</body>
+</html>

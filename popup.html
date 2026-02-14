@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT History Tracker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ChatGPT Tracker</h1>
+      <p class="subtitle" id="stats">Loading...</p>
+    </header>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search conversations..." />
+    </div>
+
+    <div class="actions">
+      <button id="exportBtn" class="btn btn-secondary" title="Export all as JSON">Export</button>
+      <button id="clearBtn" class="btn btn-danger" title="Delete all saved chats">Clear All</button>
+    </div>
+
+    <div id="conversationList" class="conversation-list">
+      <!-- Populated by JS -->
+    </div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <p>No conversations saved yet.</p>
+      <p class="hint">Visit <a href="https://chatgpt.com" target="_blank">chatgpt.com</a> and start chatting. Your conversations will be saved automatically.</p>
+    </div>
+
+    <div id="detailView" class="detail-view" style="display:none;">
+      <button id="backBtn" class="btn btn-back">&larr; Back</button>
+      <h2 id="detailTitle"></h2>
+      <p class="detail-meta" id="detailMeta"></p>
+      <div id="detailMessages" class="messages"></div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
