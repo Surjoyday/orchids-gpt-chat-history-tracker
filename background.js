@@ -158,9 +158,17 @@ async function saveProjects(projects) {
     for (const proj of projects) {
       const idx = existing.findIndex((p) => p.id === proj.id);
       if (idx >= 0) {
-        existing[idx] = { ...existing[idx], ...proj, lastSeen: new Date().toISOString() };
+        existing[idx] = {
+          ...existing[idx],
+          ...proj,
+          lastSeen: new Date().toISOString(),
+        };
       } else {
-        existing.push({ ...proj, firstSaved: new Date().toISOString(), lastSeen: new Date().toISOString() });
+        existing.push({
+          ...proj,
+          firstSaved: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+        });
       }
     }
 
@@ -188,7 +196,9 @@ async function deleteConversation(id) {
     await chrome.storage.local.remove(key);
 
     const indexResult = await chrome.storage.local.get("chat_index");
-    const index = (indexResult.chat_index || []).filter((item) => item.id !== id);
+    const index = (indexResult.chat_index || []).filter(
+      (item) => item.id !== id,
+    );
     await chrome.storage.local.set({ chat_index: index });
 
     return { success: true };

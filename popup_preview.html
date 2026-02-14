@@ -1,150 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatGPT History Tracker</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>ChatGPT Tracker</h1>
-      <p class="subtitle" id="stats">5 conversations saved</p>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT History Tracker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>ChatGPT Tracker</h1>
+        <p class="subtitle" id="stats">7 conversations saved</p>
+      </header>
 
-    <!-- Recent Chats Section -->
-    <div class="section" id="recentSection">
-      <div class="section-header">
-        <h2 class="section-title">Recent Chats</h2>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="recent">Recent</button>
+        <button class="tab" data-tab="projects">Projects</button>
+        <button class="tab" data-tab="pinned">Pinned</button>
       </div>
-      <div id="recentList" class="recent-list">
-      </div>
-    </div>
 
-    <!-- Projects / Folders Section -->
-    <div class="section" id="projectsSection">
-      <div class="section-header">
-        <h2 class="section-title">Projects & Folders</h2>
+      <!-- Tab: Recent Chats -->
+      <div class="tab-content active" id="tab-recent">
+        <div id="recentList" class="recent-list"></div>
       </div>
-      <div id="projectsList" class="projects-list">
+
+      <!-- Tab: Projects & Folders -->
+      <div class="tab-content" id="tab-projects">
+        <div id="projectsList" class="projects-list"></div>
       </div>
-    </div>
 
-    <!-- Divider -->
-    <div class="divider"></div>
+      <!-- Tab: Pinned -->
+      <div class="tab-content" id="tab-pinned">
+        <div id="pinnedList" class="recent-list"></div>
+      </div>
 
-    <!-- All Conversations -->
-    <div class="section">
-      <div class="section-header">
-        <h2 class="section-title">All Conversations</h2>
-        <div class="actions">
-          <button id="exportBtn" class="btn btn-secondary" title="Export all as JSON">Export</button>
-          <button id="clearBtn" class="btn btn-danger" title="Delete all saved chats">Clear All</button>
+      <!-- Divider -->
+      <div class="divider"></div>
+
+      <!-- All Conversations -->
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">All Conversations</h2>
+          <div class="actions">
+            <button
+              id="exportBtn"
+              class="btn btn-secondary"
+              title="Export all as JSON"
+            >
+              Export
+            </button>
+            <button
+              id="clearBtn"
+              class="btn btn-danger"
+              title="Delete all saved chats"
+            >
+              Clear All
+            </button>
+          </div>
         </div>
+
+        <div class="search-bar">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search conversations..."
+          />
+        </div>
+
+        <div id="conversationList" class="conversation-list"></div>
       </div>
 
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search conversations..." />
-      </div>
-
-      <div id="conversationList" class="conversation-list">
+      <div id="detailView" class="detail-view" style="display: none">
+        <button id="backBtn" class="btn btn-back">&larr; Back</button>
+        <h2 id="detailTitle"></h2>
+        <p class="detail-meta" id="detailMeta"></p>
+        <div id="detailMessages" class="messages"></div>
       </div>
     </div>
 
-    <div id="detailView" class="detail-view" style="display:none;">
-      <button id="backBtn" class="btn btn-back">&larr; Back</button>
-      <h2 id="detailTitle"></h2>
-      <p class="detail-meta" id="detailMeta"></p>
-      <div id="detailMessages" class="messages"></div>
-    </div>
-  </div>
+    <script>
+      // Mock data for preview — sorted newest to oldest
+      const mockAll = [
+        {
+          title: "How to use React hooks effectively",
+          messageCount: 12,
+          lastUpdated: new Date(Date.now() - 300000).toISOString(),
+          url: "#",
+          id: "1",
+        },
+        {
+          title: "Python data analysis with pandas",
+          messageCount: 8,
+          lastUpdated: new Date(Date.now() - 3600000).toISOString(),
+          url: "#",
+          id: "2",
+        },
+        {
+          title: "Build a REST API with Node.js",
+          messageCount: 24,
+          lastUpdated: new Date(Date.now() - 7200000).toISOString(),
+          url: "#",
+          id: "3",
+        },
+        {
+          title: "CSS Grid layout techniques",
+          messageCount: 6,
+          lastUpdated: new Date(Date.now() - 86400000).toISOString(),
+          url: "#",
+          id: "4",
+        },
+        {
+          title: "Debugging TypeScript errors",
+          messageCount: 15,
+          lastUpdated: new Date(Date.now() - 172800000).toISOString(),
+          url: "#",
+          id: "5",
+        },
+        {
+          title: "Machine learning fundamentals",
+          messageCount: 31,
+          lastUpdated: new Date(Date.now() - 259200000).toISOString(),
+          url: "#",
+          id: "6",
+        },
+        {
+          title: "Docker deployment guide",
+          messageCount: 18,
+          lastUpdated: new Date(Date.now() - 345600000).toISOString(),
+          url: "#",
+          id: "7",
+        },
+      ];
 
-  <script>
-    // Mock data for preview
-    const mockRecent = [
-      { title: "How to use React hooks effectively", messageCount: 12, lastUpdated: new Date(Date.now() - 300000).toISOString(), url: "#", id: "1" },
-      { title: "Python data analysis with pandas", messageCount: 8, lastUpdated: new Date(Date.now() - 3600000).toISOString(), url: "#", id: "2" },
-      { title: "Build a REST API with Node.js", messageCount: 24, lastUpdated: new Date(Date.now() - 7200000).toISOString(), url: "#", id: "3" },
-      { title: "CSS Grid layout techniques", messageCount: 6, lastUpdated: new Date(Date.now() - 86400000).toISOString(), url: "#", id: "4" },
-      { title: "Debugging TypeScript errors", messageCount: 15, lastUpdated: new Date(Date.now() - 172800000).toISOString(), url: "#", id: "5" },
-    ];
+      // Sort newest to oldest
+      mockAll.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
 
-    const mockProjects = [
-      { title: "My Web App", type: "project", url: "#" },
-      { title: "Data Science Notes", type: "folder", url: "" },
-      { title: "Code Assistant GPT", type: "gpt", url: "#" },
-    ];
+      const mockRecent = mockAll.slice(0, 5);
 
-    const mockAll = [
-      ...mockRecent,
-      { title: "Machine learning fundamentals", messageCount: 31, lastUpdated: new Date(Date.now() - 259200000).toISOString(), url: "#", id: "6" },
-      { title: "Docker deployment guide", messageCount: 18, lastUpdated: new Date(Date.now() - 345600000).toISOString(), url: "#", id: "7" },
-    ];
+      const mockPinned = [
+        mockAll.find((c) => c.id === "3"), // Build a REST API
+        mockAll.find((c) => c.id === "6"), // Machine learning
+      ];
+      const pinnedIds = new Set(mockPinned.map((c) => c.id));
 
-    function formatDate(isoString) {
-      const d = new Date(isoString);
-      const now = new Date();
-      const diff = now - d;
-      const mins = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-      if (mins < 1) return "Just now";
-      if (mins < 60) return mins + "m ago";
-      if (hours < 24) return hours + "h ago";
-      if (days < 7) return days + "d ago";
-      return d.toLocaleDateString();
-    }
+      const mockProjects = [
+        { title: "My Web App", type: "project", url: "#" },
+        { title: "Data Science Notes", type: "folder", url: "" },
+        { title: "Code Assistant GPT", type: "gpt", url: "#" },
+      ];
 
-    function escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
+      function formatDate(isoString) {
+        const d = new Date(isoString);
+        const now = new Date();
+        const diff = now - d;
+        const mins = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        if (mins < 1) return "Just now";
+        if (mins < 60) return mins + "m ago";
+        if (hours < 24) return hours + "h ago";
+        if (days < 7) return days + "d ago";
+        return d.toLocaleDateString();
+      }
 
-    // Render recent chats
-    const recentList = document.getElementById("recentList");
-    mockRecent.forEach(conv => {
-      const item = document.createElement("a");
-      item.className = "recent-item";
-      item.href = "#";
-      item.innerHTML = `
-        <div class="recent-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Tab switching
+      document.querySelector(".tabs").addEventListener("click", (e) => {
+        const tab = e.target.closest(".tab");
+        if (!tab) return;
+        const target = tab.dataset.tab;
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((c) => c.classList.remove("active"));
+        document.getElementById("tab-" + target).classList.add("active");
+      });
+
+      function createChatItem(conv, showPin) {
+        const item = document.createElement("div");
+        item.className = "recent-item";
+        const isPinned = pinnedIds.has(conv.id);
+
+        item.innerHTML = `
+        <a class="recent-item-link" href="${conv.url}" target="_blank" rel="noopener">
+          <div class="recent-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="recent-info">
+            <span class="recent-title">${escapeHtml(conv.title)}</span>
+            <span class="recent-meta">${conv.messageCount} msgs &middot; ${formatDate(conv.lastUpdated)}</span>
+          </div>
+          <div class="recent-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </div>
+        </a>
+        ${
+          showPin
+            ? `<button class="btn-pin ${isPinned ? "pinned" : ""}" data-id="${conv.id}" title="${isPinned ? "Unpin" : "Pin"}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${isPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 17v5"/>
+            <path d="M9 11V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7"/>
+            <path d="M5 17h14"/>
+            <path d="M7 11l-2 6h14l-2-6"/>
           </svg>
-        </div>
-        <div class="recent-info">
-          <span class="recent-title">${escapeHtml(conv.title)}</span>
-          <span class="recent-meta">${conv.messageCount} msgs &middot; ${formatDate(conv.lastUpdated)}</span>
-        </div>
-        <div class="recent-arrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-        </div>
+        </button>`
+            : ""
+        }
       `;
-      recentList.appendChild(item);
-    });
+        return item;
+      }
 
-    // Render projects
-    const projectsList = document.getElementById("projectsList");
-    mockProjects.forEach(proj => {
-      const item = document.createElement("a");
-      item.className = "project-item";
-      item.href = "#";
+      // Render recent chats
+      const recentList = document.getElementById("recentList");
+      mockRecent.forEach((conv) => {
+        recentList.appendChild(createChatItem(conv, true));
+      });
 
-      const iconSvg = proj.type === "folder"
-        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
-        : proj.type === "gpt"
-        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+      // Render pinned chats
+      const pinnedList = document.getElementById("pinnedList");
+      mockPinned.forEach((conv) => {
+        pinnedList.appendChild(createChatItem(conv, true));
+      });
 
-      const typeLabel = proj.type === "folder" ? "Folder" : proj.type === "gpt" ? "GPT" : "Project";
+      // Render projects
+      const projectsList = document.getElementById("projectsList");
+      mockProjects.forEach((proj) => {
+        const item = document.createElement("a");
+        item.className = "project-item";
+        item.href = "#";
 
-      item.innerHTML = `
+        const iconSvg =
+          proj.type === "folder"
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+            : proj.type === "gpt"
+              ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+              : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+
+        const typeLabel =
+          proj.type === "folder"
+            ? "Folder"
+            : proj.type === "gpt"
+              ? "GPT"
+              : "Project";
+
+        item.innerHTML = `
         <div class="project-icon">${iconSvg}</div>
         <div class="project-info">
           <span class="project-title">${escapeHtml(proj.title)}</span>
@@ -158,18 +272,27 @@
           </svg>
         </div>
       `;
-      projectsList.appendChild(item);
-    });
+        projectsList.appendChild(item);
+      });
 
-    // Render all conversations
-    const conversationList = document.getElementById("conversationList");
-    mockAll.forEach(conv => {
-      const item = document.createElement("div");
-      item.className = "conversation-item";
-      item.innerHTML = `
+      // Render all conversations (sorted newest to oldest)
+      const conversationList = document.getElementById("conversationList");
+      mockAll.forEach((conv) => {
+        const item = document.createElement("div");
+        item.className = "conversation-item";
+        const isPinned = pinnedIds.has(conv.id);
+        item.innerHTML = `
         <div class="conv-header">
           <span class="conv-title">${escapeHtml(conv.title)}</span>
           <div class="conv-actions">
+            <button class="btn-icon pin-btn ${isPinned ? "pinned" : ""}" title="${isPinned ? "Unpin" : "Pin"}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="${isPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 17v5"/>
+                <path d="M9 11V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7"/>
+                <path d="M5 17h14"/>
+                <path d="M7 11l-2 6h14l-2-6"/>
+              </svg>
+            </button>
             <a class="btn-icon open-btn" href="#" title="Open in ChatGPT">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -185,8 +308,22 @@
           <span>${formatDate(conv.lastUpdated)}</span>
         </div>
       `;
-      conversationList.appendChild(item);
-    });
-  </script>
-</body>
+        conversationList.appendChild(item);
+      });
+
+      // Search filter
+      document
+        .getElementById("searchInput")
+        .addEventListener("input", function () {
+          const query = this.value.toLowerCase();
+          const items = conversationList.querySelectorAll(".conversation-item");
+          items.forEach((item) => {
+            const title = item
+              .querySelector(".conv-title")
+              .textContent.toLowerCase();
+            item.style.display = title.includes(query) ? "" : "none";
+          });
+        });
+    </script>
+  </body>
 </html>

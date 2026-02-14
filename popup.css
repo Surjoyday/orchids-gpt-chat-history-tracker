@@ -8,7 +8,8 @@ body {
   width: 420px;
   min-height: 500px;
   max-height: 600px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #0d0d0d;
   color: #e5e5e5;
   overflow-y: auto;
@@ -439,6 +440,91 @@ header h1 {
   white-space: pre-wrap;
   word-break: break-word;
   color: #ddd;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  padding: 4px;
+  border: 1px solid #2a2a2a;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  color: #ccc;
+  background: #222;
+}
+
+.tab.active {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Pin button */
+.btn-pin {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-pin:hover {
+  color: #f59e0b;
+}
+
+.btn-pin.pinned {
+  color: #f59e0b;
+}
+
+.btn-icon.pin-btn {
+  color: #555;
+}
+
+.btn-icon.pin-btn:hover {
+  color: #f59e0b;
+}
+
+.btn-icon.pin-btn.pinned {
+  color: #f59e0b;
+}
+
+.recent-item-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* Scrollbar */

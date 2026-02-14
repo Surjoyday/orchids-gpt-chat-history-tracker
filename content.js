@@ -11,12 +11,17 @@
   function safeSendMessage(message, callback) {
     try {
       if (!chrome.runtime || !chrome.runtime.id) {
-        console.debug("[GPT Tracker] Extension context invalidated, skipping message");
+        console.debug(
+          "[GPT Tracker] Extension context invalidated, skipping message",
+        );
         return;
       }
       chrome.runtime.sendMessage(message, function (response) {
         if (chrome.runtime.lastError) {
-          console.debug("[GPT Tracker] Message error:", chrome.runtime.lastError.message);
+          console.debug(
+            "[GPT Tracker] Message error:",
+            chrome.runtime.lastError.message,
+          );
         } else if (callback) {
           callback(response);
         }
@@ -39,7 +44,10 @@
       const text = titleEl.textContent.trim();
       if (text) return text;
     }
-    const title = document.title.replace(" | ChatGPT", "").replace("ChatGPT", "").trim();
+    const title = document.title
+      .replace(" | ChatGPT", "")
+      .replace("ChatGPT", "")
+      .trim();
     return title || "Untitled Chat";
   }
 
@@ -118,8 +126,12 @@
       safeSendMessage(
         { type: "SAVE_SIDEBAR_CONVERSATIONS", conversations: conversations },
         function (response) {
-          console.debug("[GPT Tracker] Saved " + conversations.length + " sidebar conversations");
-        }
+          console.debug(
+            "[GPT Tracker] Saved " +
+              conversations.length +
+              " sidebar conversations",
+          );
+        },
       );
     }
   }
@@ -132,7 +144,9 @@
 
     navElements.forEach(function (nav) {
       // Look for links that go to projects/GPTs
-      var projectLinks = nav.querySelectorAll('a[href^="/g/"], a[href^="/gpts/"], a[href^="/project/"]');
+      var projectLinks = nav.querySelectorAll(
+        'a[href^="/g/"], a[href^="/gpts/"], a[href^="/project/"]',
+      );
       projectLinks.forEach(function (link) {
         var href = link.getAttribute("href");
         var titleEl = link.querySelector("div, span") || link;
@@ -148,7 +162,9 @@
       });
 
       // Look for folder/project groupings in the sidebar
-      var allElements = nav.querySelectorAll('[class*="project"], [class*="folder"], [data-testid*="project"], [data-testid*="folder"]');
+      var allElements = nav.querySelectorAll(
+        '[class*="project"], [class*="folder"], [data-testid*="project"], [data-testid*="folder"]',
+      );
       allElements.forEach(function (el) {
         var link = el.closest("a") || el.querySelector("a");
         if (!link) return;
@@ -157,7 +173,9 @@
         var title = titleEl.textContent.trim();
         if (!title || title.length > 100) return;
 
-        var existing = projects.find(function (p) { return p.id === href; });
+        var existing = projects.find(function (p) {
+          return p.id === href;
+        });
         if (!existing) {
           projects.push({
             id: href || "project-" + title.replace(/\s+/g, "-").toLowerCase(),
@@ -169,13 +187,25 @@
       });
 
       // Look for sidebar group headings that might indicate project folders
-      var headings = nav.querySelectorAll("h3, [role='heading'], [class*='group-title']");
+      var headings = nav.querySelectorAll(
+        "h3, [role='heading'], [class*='group-title']",
+      );
       headings.forEach(function (heading) {
         var text = heading.textContent.trim();
-        if (!text || text === "Today" || text === "Yesterday" || text === "Previous 7 Days" ||
-            text === "Previous 30 Days" || text === "Older" || text.length > 80) return;
+        if (
+          !text ||
+          text === "Today" ||
+          text === "Yesterday" ||
+          text === "Previous 7 Days" ||
+          text === "Previous 30 Days" ||
+          text === "Older" ||
+          text.length > 80
+        )
+          return;
 
-        var existing = projects.find(function (p) { return p.title === text; });
+        var existing = projects.find(function (p) {
+          return p.title === text;
+        });
         if (!existing) {
           projects.push({
             id: "folder-" + text.replace(/\s+/g, "-").toLowerCase(),
@@ -191,8 +221,10 @@
       safeSendMessage(
         { type: "SAVE_PROJECTS", projects: projects },
         function (response) {
-          console.debug("[GPT Tracker] Saved " + projects.length + " projects/folders");
-        }
+          console.debug(
+            "[GPT Tracker] Saved " + projects.length + " projects/folders",
+          );
+        },
       );
     }
   }
@@ -214,7 +246,9 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    setTimeout(function () { observer.disconnect(); }, 30000);
+    setTimeout(function () {
+      observer.disconnect();
+    }, 30000);
 
     setInterval(scrapeSidebar, 30000);
     setInterval(scrapeProjects, 30000);
